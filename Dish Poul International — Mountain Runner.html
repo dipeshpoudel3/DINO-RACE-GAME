@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dish Poul International — Mountain Runner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600&family=Petit+Formal+Script&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-1:#0B1220;
+    --sky-1:#22344E;
+    --sky-2:#0D1526;
+    --peak-far:#3A4E68;
+    --peak-mid:#28394F;
+    --peak-near:#1A2536;
+    --snow:#E9F1FA;
+    --gold:#E8B04D;
+    --gold-soft:#F3CD82;
+    --ink:#F2EFE8;
+    --ink-dim:#9FAAB9;
+    --panel:#0F1725;
+    --panel-edge:#2A3B52;
+    --pine:#3C5A44;
+    --hawk:#C9573C;
+  }
+  html,body{
+    height:100%; margin:0; box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;}
+  body{
+    min-height:100%;
+    background:
+      radial-gradient(ellipse 900px 500px at 22% -10%, rgba(232,176,77,0.10), transparent 60%),
+      var(--bg-1);
+    color:var(--ink);
+    font-family:'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:20px; padding:32px 16px;
+  }
+
+  .titleblock{ text-align:center; max-width:560px; }
+  .kicker{
+    font-family:'Press Start 2P', monospace;
+    font-size:0.58rem;
+    letter-spacing:0.08em;
+    color:var(--gold-soft);
+    margin:0 0 6px;
+  }
+  /* Heading styled area: Monotype Corsiva is not a web font, so this uses
+     Petit Formal Script — the closest available formal-cursive match —
+     applied only to this heading. */
+  h1.brand{
+    font-family:'Petit Formal Script', 'Monotype Corsiva', cursive;
+    font-weight:400;
+    font-size:clamp(2.4rem, 8vw, 3.6rem);
+    line-height:1.15;
+    margin:0;
+    color:var(--gold-soft);
+    text-shadow:0 0 22px rgba(232,176,77,0.35);
+  }
+  p.sub{
+    margin:14px 0 0;
+    font-size:0.92rem;
+    color:var(--ink-dim);
+    line-height:1.5;
+  }
+
+  #cabinet{
+    width:100%; max-width:720px;
+    background: linear-gradient(180deg, var(--panel), #0A1019);
+    border:1px solid var(--panel-edge);
+    border-radius:18px;
+    padding:18px 18px 22px;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.4),
+      0 30px 60px -25px rgba(0,0,0,0.8),
+      inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+
+  #hud{
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:'Press Start 2P', monospace;
+    font-size:0.7rem;
+    letter-spacing:0.03em;
+    color:var(--ink);
+    padding:2px 6px 14px;
+  }
+  #hud .label{ color:var(--ink-dim); font-size:0.6rem; }
+  #hi, #score{ color:var(--gold-soft); }
+
+  #screen{
+    position:relative;
+    border-radius:10px;
+    overflow:hidden;
+    border:1px solid rgba(232,176,77,0.16);
+    box-shadow:inset 0 0 40px rgba(0,0,0,0.6);
+  }
+  canvas{
+    display:block; width:100%; height:auto;
+    background:linear-gradient(180deg, #22344E 0%, #14202F 55%, #0D1526 100%);
+    touch-action:none; outline:none;
+  }
+  .vignette{
+    position:absolute; inset:0; pointer-events:none;
+    box-shadow: inset 0 0 60px 18px rgba(0,0,0,0.55);
+  }
+
+  #msg{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    text-align:center; display:none; pointer-events:none;
+    font-family:'Press Start 2P', monospace;
+  }
+  #msg-text{
+    font-size:0.85rem; color:var(--gold-soft);
+    text-shadow:0 0 12px rgba(232,176,77,0.5);
+    margin-bottom:14px;
+  }
+  button#restart{
+    margin-top:2px; padding:9px 18px; border-radius:6px;
+    border:1px solid var(--gold);
+    background:rgba(232,176,77,0.08); color:var(--gold-soft);
+    font-family:'Press Start 2P', monospace; font-size:0.6rem;
+    cursor:pointer; pointer-events:auto;
+    display:none;
+    transition:background 0.15s ease;
+  }
+  button#restart:hover{ background:rgba(232,176,77,0.18); }
+  button#restart:focus-visible, canvas:focus-visible{
+    outline:2px solid var(--gold-soft); outline-offset:2px;
+  }
+
+  #hint{
+    text-align:center; font-size:0.78rem; color:var(--ink-dim);
+    margin-top:14px; letter-spacing:0.01em;
+  }
+  #hint kbd{
+    font-family:'Space Grotesk', sans-serif; font-size:0.78rem;
+    background:rgba(242,239,232,0.08); border:1px solid rgba(242,239,232,0.15);
+    padding:1px 6px; border-radius:4px; color:var(--ink);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    * { animation-duration: 0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="titleblock">
+    <p class="kicker">MOUNTAIN TRAIL · HARD MODE</p>
+    <h1 class="brand">Dish Poul International</h1>
+    <p class="sub">Every ledge gets narrower and every gust comes faster — this trail shows no mercy. How far can you climb?</p>
+  </div>
+
+  <div id="cabinet">
+    <div id="hud">
+      <span><span class="label">BEST</span> <span id="hi">00000</span></span>
+      <span><span class="label">SCORE</span> <span id="score">00000</span></span>
+    </div>
+    <div id="screen">
+      <canvas id="game" width="800" height="260" tabindex="0" aria-label="Mountain runner game canvas"></canvas>
+      <div class="vignette"></div>
+      <div id="msg">
+        <div id="msg-text">RUN OVER</div>
+        <button id="restart">Climb again</button>
+      </div>
+    </div>
+  </div>
+
+  <p id="hint">Jump with <kbd>Space</kbd> / <kbd>↑</kbd> / tap · Duck with <kbd>↓</kbd></p>
+
+<script>
+(function(){
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const hiEl = document.getElementById('hi');
+  const msg = document.getElementById('msg');
+  const msgText = document.getElementById('msg-text');
+  const restartBtn = document.getElementById('restart');
+
+  const W = canvas.width, H = canvas.height;
+  const GROUND_Y = H - 34;
+
+  const palette = {
+    peakFar: '#3A4E68',
+    peakMid: '#28394F',
+    peakNear: '#1A2536',
+    snow: '#E9F1FA',
+    ground: '#3B2E24',
+    groundLine: '#5A4634',
+    runner: '#F2EFE8',
+    runnerShade: '#C9BFA8',
+    pine: '#3C5A44',
+    pineDark: '#294032',
+    hawk: '#C9573C',
+    cloud: 'rgba(233,241,250,0.18)'
+  };
+
+  const STORAGE_KEY = 'dish-poul-mountain-hi-score';
+  let hiScore = 0;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) hiScore = parseInt(saved, 10) || 0;
+  } catch(e) {}
+  hiEl.textContent = String(hiScore).padStart(5,'0');
+
+  let state = 'idle'; // idle | running | over
+
+  // --- HARD MODE TUNING ---
+  const START_SPEED = 8.5;
+  const MAX_SPEED = 20;
+  const SPEED_STEP = 0.5;
+  const SPEED_STEP_EVERY = 60; // score points
+  const MIN_SPAWN_GAP = 16;
+  let gravity = 0.72;
+
+  let speed = START_SPEED;
+  let score = 0;
+  let frame = 0;
+  let obstacles = [];
+  let groundOffset = 0;
+
+  const peakFarPts = Array.from({length: 6}, (_, i) => ({ x: i*(W/5), h: 60+Math.random()*40 }));
+  const peakMidPts = Array.from({length: 7}, (_, i) => ({ x: i*(W/6), h: 40+Math.random()*50 }));
+  const clouds = Array.from({length: 5}, () => ({ x: Math.random()*W, y: 20+Math.random()*50, w: 50+Math.random()*40 }));
+
+  const runner = {
+    x: 56, y: GROUND_Y - 42, w: 42, h: 42,
+    vy: 0, jumping: false, ducking: false,
+    baseH: 42, duckH: 26
+  };
+
+  function reset(){
+    speed = START_SPEED;
+    score = 0;
+    frame = 0;
+    obstacles = [];
+    runner.y = GROUND_Y - runner.baseH;
+    runner.h = runner.baseH;
+    runner.vy = 0;
+    runner.jumping = false;
+    runner.ducking = false;
+    state = 'running';
+    msg.style.display = 'none';
+    restartBtn.style.display = 'none';
+  }
+
+  function jump(){
+    if (state === 'idle' || state === 'over'){ reset(); return; }
+    if (!runner.jumping){
+      runner.vy = -12.4;
+      runner.jumping = true;
+    }
+  }
+
+  function duck(on){
+    if (state !== 'running') return;
+    runner.ducking = on && !runner.jumping;
+    runner.h = runner.ducking ? runner.duckH : runner.baseH;
+    runner.y = GROUND_Y - runner.h;
+  }
+
+  function spawnObstacle(){
+    const isHawk = score > 120 && Math.random() < 0.42;
+    if (isHawk){
+      const heights = [GROUND_Y-44, GROUND_Y-78, GROUND_Y-112];
+      const y = heights[Math.floor(Math.random()*heights.length)];
+      obstacles.push({ type:'hawk', x: W+10, y, w: 34, h: 22, flap: Math.random()*10 });
+    } else {
+      const size = 22 + Math.random()*26;
+      const cluster = Math.random() < 0.4 ? 2 : (Math.random() < 0.15 ? 3 : 1);
+      for (let i=0;i<cluster;i++){
+        obstacles.push({ type:'pine', x: W+10+i*(size*0.7+7), y: GROUND_Y-size, w: size*0.6, h: size });
+      }
+    }
+  }
+
+  let nextSpawnIn = 45;
+
+  function update(){
+    frame++;
+    score += 0.16;
+    scoreEl.textContent = String(Math.floor(score)).padStart(5,'0');
+
+    if (score > 0 && Math.floor(score) % SPEED_STEP_EVERY === 0 && speed < MAX_SPEED){
+      speed = Math.min(MAX_SPEED, START_SPEED + Math.floor(score/SPEED_STEP_EVERY)*SPEED_STEP);
+    }
+
+    groundOffset = (groundOffset - speed) % 24;
+
+    if (runner.jumping){
+      runner.y += runner.vy;
+      runner.vy += gravity;
+      if (runner.y >= GROUND_Y - runner.h){
+        runner.y = GROUND_Y - runner.h;
+        runner.vy = 0;
+        runner.jumping = false;
+      }
+    }
+
+    nextSpawnIn--;
+    if (nextSpawnIn <= 0){
+      spawnObstacle();
+      const base = 42 - speed*1.6;
+      nextSpawnIn = Math.max(MIN_SPAWN_GAP, base + Math.random()*20);
+    }
+
+    for (const o of obstacles){
+      o.x -= speed;
+      if (o.type === 'hawk') o.flap += 0.16;
+    }
+    obstacles = obstacles.filter(o => o.x + o.w > -10);
+
+    const rBox = { x: runner.x+6, y: runner.y+4, w: runner.w-12, h: runner.h-8 };
+    for (const o of obstacles){
+      const oBox = { x:o.x+3, y:o.y+3, w:o.w-6, h:o.h-6 };
+      if (rBox.x < oBox.x+oBox.w && rBox.x+rBox.w > oBox.x &&
+          rBox.y < oBox.y+oBox.h && rBox.y+rBox.h > oBox.y){
+        gameOver();
+        break;
+      }
+    }
+  }
+
+  function gameOver(){
+    state = 'over';
+    const finalScore = Math.floor(score);
+    if (finalScore > hiScore){
+      hiScore = finalScore;
+      hiEl.textContent = String(hiScore).padStart(5,'0');
+      try { localStorage.setItem(STORAGE_KEY, String(hiScore)); } catch(e) {}
+    }
+    msgText.textContent = 'RUN OVER';
+    msg.style.display = 'block';
+    restartBtn.style.display = 'inline-block';
+  }
+
+  function drawSky(){
+    const grad = ctx.createLinearGradient(0,0,0,GROUND_Y);
+    grad.addColorStop(0, '#22344E');
+    grad.addColorStop(0.6, '#182740');
+    grad.addColorStop(1, '#0D1526');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,W,GROUND_Y);
+
+    ctx.fillStyle = palette.cloud;
+    for (const c of clouds){
+      ctx.beginPath();
+      ctx.ellipse(c.x, c.y, c.w*0.5, c.w*0.22, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  function drawPeakLayer(pts, baseY, color, parallax, snowCap){
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y);
+    const shift = (groundOffset * parallax) % (W/(pts.length-1));
+    for (const p of pts){
+      ctx.lineTo(p.x - shift, baseY - p.h);
+    }
+    ctx.lineTo(W, baseY - pts[pts.length-1].h);
+    ctx.lineTo(W, GROUND_Y);
+    ctx.closePath();
+    ctx.fill();
+
+    if (snowCap){
+      ctx.fillStyle = palette.snow;
+      for (let i=0;i<pts.length;i++){
+        const p = pts[i];
+        const px = p.x - shift;
+        const py = baseY - p.h;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px-14, py+16);
+        ctx.lineTo(px+14, py+16);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+  }
+
+  function drawGround(){
+    drawPeakLayer(peakFarPts, GROUND_Y-10, palette.peakFar, 0.12, true);
+    drawPeakLayer(peakMidPts, GROUND_Y-4, palette.peakMid, 0.3, false);
+
+    ctx.fillStyle = palette.ground;
+    ctx.fillRect(0, GROUND_Y, W, H-GROUND_Y);
+    ctx.strokeStyle = palette.groundLine;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y);
+    ctx.lineTo(W, GROUND_Y);
+    ctx.stroke();
+
+    ctx.fillStyle = palette.groundLine;
+    for (let x = groundOffset; x < W; x += 24){
+      ctx.fillRect(x, GROUND_Y+6, 10, 2);
+    }
+  }
+
+  function drawRunner(){
+    const x = runner.x, y = runner.y, w = runner.w, h = runner.h;
+    ctx.fillStyle = palette.runner;
+    if (runner.ducking){
+      ctx.fillRect(x, y+h-18, w+16, 18);
+      ctx.fillRect(x+w+2, y+h-26, 14, 10);
+      ctx.fillStyle = palette.runnerShade;
+      ctx.fillRect(x, y+h-6, w+16, 4);
+    } else {
+      ctx.fillRect(x+8, y, w-16, h-8);
+      ctx.fillRect(x+w-18, y-6, 18, 16);
+      ctx.fillRect(x, y+h-16, 10, 16);
+      ctx.fillStyle = palette.runnerShade;
+      const legOffset = state==='running' ? (Math.floor(frame/5)%2===0 ? 0 : 7) : 0;
+      ctx.fillRect(x+8+legOffset, y+h-8, 7, 8);
+      ctx.fillRect(x+w-15-legOffset, y+h-8, 7, 8);
+      ctx.fillRect(x+8, y+h-10, w-16, 3);
+      ctx.fillStyle = palette.peakNear;
+      ctx.fillRect(x+w-8, y-2, 3, 3);
+    }
+  }
+
+  function drawObstacles(){
+    for (const o of obstacles){
+      if (o.type === 'pine'){
+        ctx.fillStyle = palette.pine;
+        ctx.beginPath();
+        ctx.moveTo(o.x + o.w/2, o.y);
+        ctx.lineTo(o.x, o.y + o.h*0.7);
+        ctx.lineTo(o.x + o.w, o.y + o.h*0.7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = palette.pineDark;
+        ctx.beginPath();
+        ctx.moveTo(o.x + o.w/2, o.y + o.h*0.3);
+        ctx.lineTo(o.x + o.w*0.15, o.y + o.h);
+        ctx.lineTo(o.x + o.w*0.85, o.y + o.h);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        const wing = Math.sin(o.flap) > 0 ? 7 : -7;
+        ctx.fillStyle = palette.hawk;
+        ctx.fillRect(o.x, o.y+10, o.w, 6);
+        ctx.fillRect(o.x+8, o.y+10+wing, 15, 5);
+      }
+    }
+  }
+
+  function drawIdle(){
+    ctx.fillStyle = 'rgba(242,239,232,0.85)';
+    ctx.font = "12px 'Press Start 2P', monospace";
+    ctx.textAlign = 'center';
+    ctx.fillText('PRESS SPACE OR TAP TO START', W/2, H/2);
+  }
+
+  function render(){
+    ctx.clearRect(0,0,W,H);
+    drawSky();
+    drawGround();
+    drawRunner();
+    drawObstacles();
+    if (state === 'idle') drawIdle();
+  }
+
+  function loop(){
+    if (state === 'running') update();
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'ArrowUp'){
+      e.preventDefault();
+      jump();
+    } else if (e.code === 'ArrowDown'){
+      e.preventDefault();
+      duck(true);
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.code === 'ArrowDown') duck(false);
+  });
+  canvas.addEventListener('pointerdown', () => jump());
+  restartBtn.addEventListener('click', (e) => { e.stopPropagation(); reset(); });
+
+  render();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
